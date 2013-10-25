@@ -15,6 +15,10 @@ set (MAJOR_VERSION 0)
 set (MINOR_VERSION 5)
 set (PATCH_VERSION 0)
 set(QTXDG_VERSION_STRING ${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION})
+set(QTXDG_MAJOR_VERSION ${MAJOR_VERSION})
+set(QTXDG_MINOR_VERSION ${MINOR_VERSION})
+set(QTXDG_PATCH_VERSION ${PATCH_VERSION})
+
 
 add_definitions(-Wall)
 
@@ -132,29 +136,43 @@ set(libqtxdg_MOCS
     xdgmenuwidget.h
 )
 
+include(create_portable_headers)
+
 #************************************************
-# Build 2 config.cmake files
-# One for in-tree build and second for normal one.
+# Create in-tree build infrastructure
 #************************************************
-set(QTXDG_MAJOR_VERSION ${MAJOR_VERSION})
-set(QTXDG_MINOR_VERSION ${MINOR_VERSION})
-set(QTXDG_PATCH_VERSION ${PATCH_VERSION})
+if(INTREE_ROOT_DIR)
+    # Copy public headers
+    foreach(h ${libqtxdg_PUBLIC_H_FILES})
+        configure_file(${h} ${INTREE_ROOT_DIR}/include/qtxdg/${h} COPYONLY)
+    endforeach()
 
-# In tree compilation ......................
-set(QTXDG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR};${CMAKE_CURRENT_BINARY_DIR}")
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/qtxdg-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/${QTXDGX_FILE_NAME}-config.cmake
-    @ONLY
-)
+    # Create the portable headers
+    create_portable_headers(INTREE_PORTABLE_HEADERS ${INTREE_ROOT_DIR}/include/qtxdg ${libqtxdg_PUBLIC_CLASSES})
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${QTXDGX_FILE_NAME}_use.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/${QTXDGX_FILE_NAME}_use.cmake
-    @ONLY
-)
+    # Create config.cmake & use.cmake files
+    set(QTXDG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR};${INTREE_ROOT_DIR}/include")
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/qtxdg-config.cmake.in
+        ${INTREE_ROOT_DIR}/cmake/${QTXDGX_FILE_NAME}-config.cmake
+        @ONLY
+    )
 
-# Instalable ...............................
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${QTXDGX_FILE_NAME}_use.cmake
+        ${INTREE_ROOT_DIR}/cmake/${QTXDGX_FILE_NAME}_use.cmake
+        @ONLY
+    )
+endif()
+
+#************************************************
+# Create instalable build infrastructure
+#************************************************
+
+# Create the portable headers
+create_portable_headers(libqtxdg_PORTABLE_HEADERS ${CMAKE_CURRENT_BINARY_DIR} ${libqtxdg_PUBLIC_CLASSES})
+
+# Create config.cmake & use.cmake files
 set(QTXDG_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/${QTXDGX_FILE_NAME})
 
 configure_file(
@@ -212,9 +230,6 @@ set_target_properties(${QTXDGX_LIBRARY_NAME} PROPERTIES
   SOVERSION ${MAJOR_VERSION}
 )
 
-# create the portable headers
-include(create_portable_headers)
-create_portable_headers(libqtxdg_PORTABLE_HEADERS ${libqtxdg_PUBLIC_CLASSES})
 
 install(TARGETS ${QTXDGX_LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${libqtxdg_PUBLIC_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${QTXDGX_FILE_NAME})

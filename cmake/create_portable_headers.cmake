@@ -9,7 +9,7 @@
 # PORTABLE_HEADER is an return value that contains the full name of the
 #   generated headers.
 
-function(create_portable_headers outfiles)
+function(create_portable_headers outfiles outDirectory)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs)
@@ -19,10 +19,10 @@ function(create_portable_headers outfiles)
     foreach(f ${class_list})
         string(TOLOWER "${f}.h" _filename)
 
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${f}
+        file(WRITE ${outDirectory}/${f}
             "#include \"${_filename}\"")
 
-        list(APPEND ${outfiles} ${CMAKE_CURRENT_BINARY_DIR}/${f})
+        list(APPEND ${outfiles} ${outDirectory}/${f})
     endforeach()
 
     set(${outfiles} ${${outfiles}} PARENT_SCOPE)
