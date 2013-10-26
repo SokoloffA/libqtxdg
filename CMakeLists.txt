@@ -181,6 +181,13 @@ configure_file(
     @ONLY
 )
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${QTXDGX_FILE_NAME}_use.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/cmake/${QTXDGX_FILE_NAME}_use.cmake
+    @ONLY
+)
+
+
 # Translations **********************************
 # QtXdg is an independent library, so I do not use razor_translate_ts
 include(qtxdgTranslate)
