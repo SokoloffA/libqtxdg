@@ -11,6 +11,7 @@ lib*.so
 lib*.so.*
 ui_*.h
 *.qm
+*.bak
 razorqt-appswitcher/razor-appswitcher
 razorqt-desktop/razor-desktop
 razorqt-panel/panel/razor-panel
