@@ -266,7 +266,7 @@ export(TARGETS ${XDGQT_LIBRARY_NAME} FILE ${CFG_XDGQT_TRAGETS_FILE})
 #************************************************
 # Create instalable build infrastructure
 #************************************************
-set(CFG_XDGQT_INCLUDE_DIR   ${XDGQT_INTREE_INCLUDE_DIR})
+set(CFG_XDGQT_INCLUDE_DIR   ${CMAKE_INSTALL_FULL_INCLUDEDIR})
 set(CFG_XDGQT_LIBRARY_NAME  ${XDGQT_LIBRARY_NAME})
 set(CFG_XDGQT_USE_FILE      ${XDGQT_INSTALL_CMAKE_DIR}${XDGQT_LIBRARY_NAME}/${XDGQT_LIBRARY_NAME}_use.cmake)
 set(CFG_XDGQT_TRAGETS_FILE  ${XDGQT_INSTALL_CMAKE_DIR}${XDGQT_LIBRARY_NAME}/${XDGQT_LIBRARY_NAME}-targets.cmake)
@@ -306,7 +306,6 @@ install(FILES
 
 install(EXPORT 
     ${XDGQT_LIBRARY_NAME}-targets
-    #${XDGQT_LIBRARY_NAME}-targets.cmake
     DESTINATION ${XDGQT_INSTALL_CMAKE_DIR}/${XDGQT_LIBRARY_NAME}
     COMPONENT Devel
 )
