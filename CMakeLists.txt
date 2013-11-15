@@ -76,14 +76,13 @@ option(USE_QT4 "Force use the Qt4." $ENV{USE_QT4})
 
 if((USE_QT4 AND USE_QT5) OR
    (NOT USE_QT4 AND NOT USE_QT5))
-    # Autodetect Qt version
-    find_package(Qt5Core QUIET)
-    if (Qt5Core_FOUND)
-        set(USE_QT4 OFF)
-        set(USE_QT5 ON)
-    else()
+    find_package(Qt4 QUIET)
+    if (QT4_FOUND)
         set(USE_QT4 ON)
         set(USE_QT5 OFF)
+    else()
+        set(USE_QT4 OFF)
+        set(USE_QT5 ON)
     endif()
 endif()
 
@@ -102,7 +101,6 @@ set(XDGQT_VERSION_STRING ${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION})
 set(XDGQT_MAJOR_VERSION ${MAJOR_VERSION})
 set(XDGQT_MINOR_VERSION ${MINOR_VERSION})
 set(XDGQT_PATCH_VERSION ${PATCH_VERSION})
-
 
 add_definitions(-Wall)
 
@@ -151,73 +149,19 @@ else()
 endif()
 
 set(XDGQT_LIBRARY_NAME "xdgqt${XDGQT_QT_VERSION}")
-set(XDGQT_FILE_NAME "xdgqt${XDGQT_QT_VERSION}")
 
 set(XDGQT_PKG_CONFIG_DESCRIPTION "XdgQt${XDGQT_QT_VERSION}, a Qt${XDGQT_QT_VERSION} implementation of XDG standards")
 
+set(XDGQT_INTREE_INCLUDE_DIR	${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/include)
+
+set(XDGQT_INSTALL_INCLUDE_DIR 	${CMAKE_INSTALL_INCLUDEDIR})
+set(XDGQT_INSTALL_CMAKE_DIR     ${CMAKE_INSTALL_PREFIX}/share/cmake/)
+#set(XDGQT_INSTALL_LIB_DIR       ${CMAKE_INSTALL_FULL_LIBDIR})
 
 
 find_package(LibMagic REQUIRED QUIET)
 
 include(create_portable_headers)
-#************************************************
-# Create in-tree build infrastructure
-#************************************************
-if(INTREE_ROOT_DIR)
-    # Copy public headers
-    foreach(h ${PUBLIC_H_FILES})
-        configure_file(${h} ${INTREE_ROOT_DIR}/include/xdgqt/${h} COPYONLY)
-    endforeach()
-
-    # Create the portable headers
-    create_portable_headers(INTREE_PORTABLE_HEADERS ${INTREE_ROOT_DIR}/include/xdgqt ${PUBLIC_CLASSES})
-
-    # Create config.cmake & use.cmake files
-    set(XDGQT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR};${INTREE_ROOT_DIR}/include")
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt-config.cmake.in
-        ${INTREE_ROOT_DIR}/cmake/${XDGQT_FILE_NAME}-config.cmake
-        @ONLY
-    )
-
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt_use.cmake
-        ${INTREE_ROOT_DIR}/cmake/${XDGQT_FILE_NAME}_use.cmake
-        @ONLY
-    )
-endif()
-
-#************************************************
-# Create instalable build infrastructure
-#************************************************
-
-# Create the portable headers
-create_portable_headers(PORTABLE_HEADERS ${CMAKE_CURRENT_BINARY_DIR} ${PUBLIC_CLASSES})
-
-# Create config.cmake & use.cmake files
-set(XDGQT_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/${XDGQT_FILE_NAME})
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${XDGQT_FILE_NAME}-config.cmake
-    @ONLY
-)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt_use.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/${XDGQT_FILE_NAME}_use.cmake
-    @ONLY
-)
-
-#**********************************************************
-
-include(FindLibSuffix)
-
-#if(USE_QT5)
-#    QT5_WRAP_CPP(CXX_FILES ${MOCS})
-#else()
-#    QT4_WRAP_CPP(CXX_FILES ${MOCS})
-#endif()
 
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -225,7 +169,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 
 
-set(APP_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/lib${XDGQT_FILE_NAME})
+set(APP_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/lib${XDGQT_LIBRARY_NAME})
 add_definitions(-DTRANSLATIONS_DIR=\"${APP_SHARE_DIR}\")
 
 add_library(${XDGQT_LIBRARY_NAME} SHARED
@@ -243,21 +187,130 @@ set_target_properties(${XDGQT_LIBRARY_NAME} PROPERTIES
   SOVERSION ${MAJOR_VERSION}
 )
 
-#qt5_use_modules(${XDGQT_LIBRARY_NAME} Widgets Xml)
+install(FILES
+    ${QM_FILES}
+    DESTINATION share/xdgqt 
+)    
 
-install(TARGETS ${XDGQT_LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(FILES ${PUBLIC_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${XDGQT_FILE_NAME})
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${XDGQT_FILE_NAME}-config.cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/${XDGQT_FILE_NAME})
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/${XDGQT_FILE_NAME}_use.cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/${XDGQT_FILE_NAME})
-install(FILES ${PORTABLE_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${XDGQT_FILE_NAME})
+install(TARGETS 
+    ${XDGQT_LIBRARY_NAME} 
+    DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+    EXPORT ${XDGQT_LIBRARY_NAME}-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}    
+)
 
+
+#************************************************
+# Create pkgconfig file
+#************************************************
 include(create_pkgconfig_file)
 create_pkgconfig_file(${XDGQT_LIBRARY_NAME}
     ${XDGQT_PKG_CONFIG_DESCRIPTION}
     ${XDGQT_PKG_CONFIG_REQUIRES}
-    ${XDGQT_FILE_NAME}
+    ${XDGQT_LIBRARY_NAME}
     ${XDGQT_VERSION_STRING}
 )
+#************************************************
+
+
+# Copy public headers
+foreach(h ${PUBLIC_H_FILES})
+    configure_file(${h} ${XDGQT_INTREE_INCLUDE_DIR}/xdgqt/${h} COPYONLY)
+endforeach()
+
+# Create the portable headers
+create_portable_headers(PORTABLE_HEADERS ${XDGQT_INTREE_INCLUDE_DIR}/xdgqt ${PUBLIC_CLASSES})
+install(FILES 
+    ${PUBLIC_H_FILES} 
+    ${PORTABLE_HEADERS} 
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xdgqt
+    COMPONENT Devel
+)
+
+
+
+set(CFG_XDGQT_MAJOR_VERSION ${XDGQT_MAJOR_VERSION})
+set(CFG_XDGQT_MINOR_VERSION ${XDGQT_MINOR_VERSION})
+set(CFG_XDGQT_PATCH_VERSION ${XDGQT_MINOR_VERSION})
+set(CFG_XDGQT_QT_VERSION    ${XDGQT_QT_VERSION})
+
+
+#************************************************
+# Create in-tree build infrastructure
+#************************************************
+set(CFG_XDGQT_INCLUDE_DIR   ${XDGQT_INTREE_INCLUDE_DIR})
+set(CFG_XDGQT_LIBRARY_NAME  ${XDGQT_LIBRARY_NAME})
+set(CFG_XDGQT_USE_FILE      ${CMAKE_BINARY_DIR}/${XDGQT_LIBRARY_NAME}_use.cmake)
+set(CFG_XDGQT_TRAGETS_FILE  ${CMAKE_BINARY_DIR}/${XDGQT_LIBRARY_NAME}-targets.cmake)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt-config.cmake.in 
+    ${CMAKE_BINARY_DIR}/xdgqt-config.cmake
+    @ONLY
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqtX-config.cmake.in 
+    ${CMAKE_BINARY_DIR}/${XDGQT_LIBRARY_NAME}-config.cmake
+    @ONLY
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt_use.cmake.in
+    ${CMAKE_BINARY_DIR}/${XDGQT_LIBRARY_NAME}_use.cmake
+    @ONLY
+)
+
+export(TARGETS ${XDGQT_LIBRARY_NAME} FILE ${CFG_XDGQT_TRAGETS_FILE})
+
+#************************************************
+# Create instalable build infrastructure
+#************************************************
+set(CFG_XDGQT_INCLUDE_DIR   ${XDGQT_INTREE_INCLUDE_DIR})
+set(CFG_XDGQT_LIBRARY_NAME  ${XDGQT_LIBRARY_NAME})
+set(CFG_XDGQT_USE_FILE      ${XDGQT_INSTALL_CMAKE_DIR}${XDGQT_LIBRARY_NAME}/${XDGQT_LIBRARY_NAME}_use.cmake)
+set(CFG_XDGQT_TRAGETS_FILE  ${XDGQT_INSTALL_CMAKE_DIR}${XDGQT_LIBRARY_NAME}/${XDGQT_LIBRARY_NAME}-targets.cmake)
+
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt-config.cmake.in 
+    ${CMAKE_CURRENT_BINARY_DIR}/install/xdgqt-config.cmake
+    @ONLY
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqtX-config.cmake.in 
+    ${CMAKE_CURRENT_BINARY_DIR}/install/${XDGQT_LIBRARY_NAME}-config.cmake
+    @ONLY
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/xdgqt_use.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/install/${XDGQT_LIBRARY_NAME}_use.cmake
+    @ONLY
+)
+
+install(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/install/xdgqt-config.cmake
+    DESTINATION ${XDGQT_INSTALL_CMAKE_DIR}/xdgqt
+    COMPONENT Devel
+)
+
+
+install(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/install/${XDGQT_LIBRARY_NAME}-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/install/${XDGQT_LIBRARY_NAME}_use.cmake
+    DESTINATION ${XDGQT_INSTALL_CMAKE_DIR}/${XDGQT_LIBRARY_NAME}
+    COMPONENT Devel
+)
+
+install(EXPORT 
+    ${XDGQT_LIBRARY_NAME}-targets
+    #${XDGQT_LIBRARY_NAME}-targets.cmake
+    DESTINATION ${XDGQT_INSTALL_CMAKE_DIR}/${XDGQT_LIBRARY_NAME}
+    COMPONENT Devel
+)
+
 
 
 if(BUILD_TESTS STREQUAL "Yes")

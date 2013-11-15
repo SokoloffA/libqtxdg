@@ -29,33 +29,23 @@
 #    add_executable(use-xdgqt main.cpp)
 #    target_link_libraries(use-xdgqt ${XDGQT_QT_LIBRARIES} ${XDGQT_LIBRARIES})
 
-option(USE_QT5 "Force use the Qt5." $ENV{USE_QT5})
-option(USE_QT4 "Force use the Qt4." $ENV{USE_QT4})
+set(XDGQT_QT_VERSION        @CFG_XDGQT_QT_VERSION@)
 
-if((USE_QT4 AND USE_QT5) OR
-   (NOT USE_QT4 AND NOT USE_QT5))
-    # Autodetect Qt version
-    find_package(XdgQt4 QUIET)
-    if (XDGQT4_FOUND)
-        set(USE_QT4 ON)
-        set(USE_QT5 OFF)
-    else()
-        set(USE_QT4 OFF)
-        set(USE_QT5 ON)
-    endif()
-endif()
+set(XDGQT_INCLUDE_DIR       @CFG_XDGQT_INCLUDE_DIR@)
+set(XDGQT_INCLUDE_DIRS      @CFG_XDGQT_INCLUDE_DIR@)
 
-if(XDGQT_FIND_REQUIRED)
-  set(REQUIRED_OPT "REQUIRED")
-endif()
+set(XDGQT_LIBRARY           @CFG_XDGQT_LIBRARY_NAME@)
+set(XDGQT_LIBRARIES         @CFG_XDGQT_LIBRARY_NAME@)
 
-if(XDGQT_FIND_QUIETLY)
-  set(QUIET_OPT "QUIET")
-endif()
+set(XDGQT_USE_FILE          @CFG_XDGQT_USE_FILE@)
+set(XDGQT@CFG_XDGQT_QT_VERSION@_FOUND            1)
+set(XDGQT_FOUND             1)
 
+set(XDGQT_MAJOR_VERSION     @CFG_XDGQT_MAJOR_VERSION@)
+set(XDGQT_MINOR_VERSION     @CFG_XDGQT_MINOR_VERSION@)
+set(XDGQT_PATCH_VERSION     @CFG_XDGQT_PATCH_VERSION@)
+set(XDGQT_VERSION           @CFG_XDGQT_MAJOR_VERSION@.@CFG_XDGQT_MINOR_VERSION@.@CFG_XDGQT_PATCH_VERSION@)
 
-if(USE_QT5)
-  find_package(XdgQt5 ${REQUIRED_OPT} ${QUIET_OPT})
-else()
-  find_package(XdgQt4 ${REQUIRED_OPT} ${QUIET_OPT})
-endif()
+include(@CFG_XDGQT_TRAGETS_FILE@)
+
+mark_as_advanced(XDGQT_LIBRARY XDGQT_INCLUDE_DIR)
